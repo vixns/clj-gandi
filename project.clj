@@ -1,11 +1,9 @@
-(defproject clj-gandi "0.1.0"
+(defproject clj-gandi "0.1.1-SNAPSHOT"
   :description "Gandi Api wrapper"
   :url "http://github.com/vixns/clj-gandi"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src"]
-  :resource-paths ["resources"]
-  :repositories [["local" "file:///Users/kaalh/Development/jars"]]
   :dependencies [
                   [org.clojure/clojure "1.6.0"]
                   [org.clojure/core.async "0.1.338.0-5c5012-alpha"]

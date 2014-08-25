@@ -12,7 +12,7 @@ It's designed to handle massive API calls :
 
 - use a workers pool based on async channels, allowing many concurrent requests.
 - compliant with API [rate limits](<http://doc.rpc.gandi.net/overview.html#rate-limit>)
-- circuit breaker allowing your application to survive "503 storms"
+- circuit breaker allowing your application to survive API outages.
 - auto requeueing on failure, with loop handling.
 
 ## Usage
@@ -30,7 +30,12 @@ GANDI_API_KEY="theprodapikey" GANDI_PROD=1 lein run
 #### Example
 ```clojure
 (ns test
-  (require [clj-gandi.core]))
+  (require 
+  [clj-gandi.core]
+  [taoensso.timbre :as timbre]))
+
+;;;hide debug
+(timbre/set-level! :warn)
 
 ;;;launch workers pool, only once !
 (defonce gandi-pool (clj-gandi.core/initialize))
@@ -39,7 +44,7 @@ GANDI_API_KEY="theprodapikey" GANDI_PROD=1 lein run
 (clj-gandi.core/call :version.info)
 
 ;;;simple call, 1000 times
-(repeatedly 1000 (clj-gandi.core/call :version.info))
+(repeatedly 1000 #(clj-gandi.core/call :version.info))
 
 ;;;get domains count
 (clj-gandi.core/call :domain.count)
