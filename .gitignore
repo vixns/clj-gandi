@@ -1,0 +1,10 @@
+# Created by .gitignore support plugin (hsz.mobi)
+.idea
+.lein-env
+.lein-repl-history
+.lein-failures
+clj_gandi.iml
+profiles.clj
+pom.xml
+pom.xml.asc
+target
