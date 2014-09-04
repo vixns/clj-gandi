@@ -1,4 +1,4 @@
-(defproject clj-gandi "0.1.1-SNAPSHOT"
+(defproject clj-gandi "0.1.1"
   :description "Gandi Api wrapper"
   :url "http://github.com/vixns/clj-gandi"
   :license {:name "Eclipse Public License"
@@ -11,8 +11,11 @@
                   [throttler "1.0.0"]
                   [necessary-evil "2.0.0"]
                   [cheshire "5.3.1"]
-                  [com.taoensso/timbre "3.2.1"]
-                  [circuit-breaker "0.1.7"]
+                  [org.clojure/tools.logging "0.3.0"]
+                  [clj-logging-config "1.9.12"]
+                  [org.slf4j/slf4j-log4j12 "1.7.7"]
+                  [hystrix-event-stream-clj "0.1.3"]
+                  [com.netflix.hystrix/hystrix-clj "1.4.0-RC4"]
                   ]
   :plugins [[lein-environ "1.0.0"]]
   :jvm-opts ["-Djava.awt.headless=true" "-Djava.library.path=/usr/local/lib:/opt/local/lib:/usr/lib"]

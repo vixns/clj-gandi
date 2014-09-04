@@ -1,21 +1,19 @@
 (ns clj-gandi.test
   (require
     [clojure.test :refer :all]
-    [taoensso.timbre :as timbre :refer [set-level!]]
+    [clj-logging-config.log4j :as log-config]
     [clj-gandi.core :refer [call list-all]]))
 
-(timbre/set-level! :warn)
+(log-config/set-logger! "root" :level :warn)
+;(log-config/set-logger! "clj-gandi.core" :level :debug)
 
-(defn init [f]
-  (clj-gandi.core/initialize)
-  (f))
-
-(use-fixtures :once init)
+(defonce gandi-pool (clj-gandi.core/initialize))
 
 (deftest test-call
   (testing "api simple call tests"
     (is (contains? (call :version.info) :api_version))
     (is (not (nil? (call :domain.list))))
+    (is (not (nil? (call :domain.list {:items_per_page 10 :page 0}))))
     ))
 
 (deftest test-list

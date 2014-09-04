@@ -3,58 +3,57 @@
             [necessary-evil.value :refer [allow-nils]]
             [necessary-evil.fault :refer [fault?]]
             [throttler.core :refer [throttle-chan]]
-            [taoensso.timbre :refer [fatal warnf debugf]]
             [environ.core :refer [env]]
             [clj-time.format :as format]
-            [circuit-breaker.core :refer [wrap-with-circuit-breaker defncircuitbreaker]]
+            [com.netflix.hystrix.core :as hystrix]
+            [clojure.tools.logging :as log]
             [clojure.core.async :as async :refer (<!! >! <! put! close! chan go-loop)]))
 
-(defn- api-url [] (if (= "1" (env :gandi-prod)) "https://rpc.gandi.net/xmlrpc/" "https://rpc.ote.gandi.net/xmlrpc/"))
-(defn- api-key [] (or (env :gandi-api-key) (fatal "GANDI_API_KEY env var missing")))
-(defncircuitbreaker :rpc {:timeout 10 :threshold 2})
+(defn- api-url [] (if (= "1" (env :gandi-prod))
+                    "https://rpc.gandi.net/xmlrpc/"
+                    "https://rpc.ote.gandi.net/xmlrpc/"))
+(defn- api-key [] (or (env :gandi-api-key)
+                      (log/fatal "GANDI_API_KEY env var missing")))
 (def custom-date-formatter (format/formatter "yyyy-MM-dd HH:mm:ss"))
 (def in (chan 1))
-(def slow-chan (throttle-chan in 15 :second))
+(def slow-chan (throttle-chan in 14 :second))
 
-(defn- call*
-  "gandi api wrapper.
-  (call :method :version.info)
-  (call :method :domain.list :items_per_page 500)
-  "
-  [{:keys [method] :or [:version.info] :as options}]
-  (try
-    (let [res (allow-nils true (xml-rpc/call (api-url) method (api-key) (dissoc options :method :resp-ch :retry-count)))]
-      (if (fault? res)
-        (throw (Exception. (str (:fault-string res) method options)))
-        (identity res)))
-    (catch Exception e
-      (do
-        (debugf "caught exception: %s" (.getMessage e))
-        (let [rc (or (:retry-count options) 0)]
-          (if (< rc 5)
-            (do
-              (warnf "retry call %s %s " rc options)
-              (Thread/sleep 300)
-              (call* (assoc options :retry-count (inc rc))))
-            (throw (Exception. (str "error in rpc call " (.getMessage e))))))))))
+;;; raise rpc call timeouts to 5000ms, needed when asking hundreds of items
+(System/setProperty "hystrix.command.clj-gandi.core/call*.execution.isolation.thread.timeoutInMilliseconds" "5000")
+
+(hystrix/defcommand call*
+                    "gandi api wrapper.
+                    (call :method :version.info)
+                    (call :method :domain.list :items_per_page 500)
+                    "
+                    {:hystrix/fallback-fn (constantly nil)}
+                    [{:keys [method] :or [:version.info] :as options}]
+                    (allow-nils true (xml-rpc/call
+                                       (api-url) method (api-key)
+                                       (dissoc options :method :resp-ch))))
+
 
 (defn- init-worker
   "init worker"
-  [i]
+  [id]
   (go-loop []
-           (let [e (<! slow-chan)
-                 r (wrap-with-circuit-breaker :rpc
-                                              (fn [] (debugf "message to gandi worker %s: %s" i e)
-                                                (call* e)))]
-             (debugf "response from gandi worker %s: %s" i r)
-             (if (contains? e :resp-ch)
-               (let [c (:resp-ch e)]
-                 (if (nil? r) (close! c) (>! c r)))))
+           (let [e (<! slow-chan)]
+             (log/debugf "message to gandi worker %s: %s" id e)
+             (loop [retry 0]
+               (let [r (call* e)]
+                 (log/debugf "response from gandi worker %s (try %s): %s " id (inc retry) (if (fault? r) (:fault-string r) r))
+                 (if (or (fault? r) (nil? r))
+                   (if (< retry 4)
+                     (do (Thread/sleep 500) (recur (inc retry)))
+                     (do
+                       (if-let [c (:resp-ch e)] (close! c))
+                       (log/errorf "Error in rpc call %s" (str (:fault-string r) e))))
+                   (if-let [c (:resp-ch e)] (>! c r))))))
            (recur)))
 
 (defn initialize
   "initialize workers"
-  ([] (initialize 45))
+  ([] (initialize 40))
   ([n] (dorun (map (partial init-worker) (range n)))))
 
 (defn call

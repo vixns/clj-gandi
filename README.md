@@ -1,7 +1,7 @@
 # Clojure wrapper for Gandi.net API
 
 ```clojure
-[clj-gandi "0.1.0"]
+[clj-gandi "0.1.1"]
 ```
 
 ## About
@@ -10,10 +10,11 @@
 
 It's designed to handle massive API calls :
 
-- use a workers pool based on async channels, allowing many concurrent requests.
+- use a workers pool based on async channels.
 - compliant with API [rate limits](<http://doc.rpc.gandi.net/overview.html#rate-limit>)
+- auto-requeueing on failure, with loop handling.
 - circuit breaker allowing your application to survive API outages.
-- auto requeueing on failure, with loop handling.
+
 
 ## Usage
 
@@ -31,11 +32,7 @@ GANDI_API_KEY="theprodapikey" GANDI_PROD=1 lein run
 ```clojure
 (ns test
   (require 
-  [clj-gandi.core]
-  [taoensso.timbre :as timbre]))
-
-;;;hide debug
-(timbre/set-level! :warn)
+  [clj-gandi.core]))
 
 ;;;launch workers pool, only once !
 (defonce gandi-pool (clj-gandi.core/initialize))
@@ -67,3 +64,15 @@ Instead of adding extra tests on each api call, specific helpers methods are pro
 (clj-gandi.core/method-help :domain.info)
 (clj-gandi.core/method-signature :domain.list)
 ```
+
+#### Roadmap
+
+- Hystrix dashboard connector.
+- Internal stats API.
+- Better unit tests, examples and documentation.
+- Improve the API with higher level functions, *à la* [Gandi.cli](https://github.com/Gandi/gandi.cli)
+
+#### Thanks
+
+- To all the *bullshitless* [Gandi](https://www.gandi.net) tech and support team.
+- To Joseph Wilk for his inspiring blog entry introducing [using Hystrix with clojure](http://blog.josephwilk.net/clojure/building-clojure-services-at-scale.html)
