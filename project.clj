@@ -1,4 +1,4 @@
-(defproject clj-gandi "0.1.1"
+(defproject clj-gandi "0.1.2"
   :description "Gandi Api wrapper"
   :url "http://github.com/vixns/clj-gandi"
   :license {:name "Eclipse Public License"
