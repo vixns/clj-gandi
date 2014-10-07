@@ -1,19 +1,20 @@
 # Clojure wrapper for Gandi.net API
 
 ```clojure
-[clj-gandi "0.1.2"]
+[clj-gandi "0.1.3"]
 ```
 
 ## About
 
 **clj-gandi** is a clojure wrapper on [Gandi.net](<https://www.gandi.net/>) XML-RPC [API](<http://doc.rpc.gandi.net/>).
 
-It's designed to handle massive API calls :
+It's designed to maintain a consistent and resilient RPC stream  :
 
-- use a workers pool based on async channels.
-- compliant with API [rate limits](<http://doc.rpc.gandi.net/overview.html#rate-limit>)
-- auto-requeueing on failure, with loop handling.
-- circuit breaker allowing your application to survive API outages.
+- Use a workers pool based on async channels.
+- Compliant with API [rate limits](<http://doc.rpc.gandi.net/overview.html#rate-limit>)
+- Auto-requeueing on failure, with loop handling.
+- Circuit breaker allowing your application to survive API outages.
+- Integrated hystrix metrics server (optional).
 
 
 ## Usage
@@ -40,10 +41,14 @@ GANDI_API_KEY="theprodapikey" GANDI_PROD=1 lein run
 ```clojure
 (ns test
   (require 
-  [clj-gandi.core]))
+  [clj-gandi.core]
+  [clj-gandi.hystrix.server]))
 
 ;;;launch workers pool, only once !
 (defonce gandi-pool (clj-gandi.core/initialize))
+
+;;;launch metrics server for hystrix dashboard / turbine, on port 5000
+(clj-gandi.hystrix.server/run 5000)
 
 ;;;simple call
 (clj-gandi.core/call :version.info)
@@ -73,10 +78,16 @@ Instead of adding extra tests on each api call, specific helpers methods are pro
 (clj-gandi.core/method-signature :domain.list)
 ```
 
+#### (Not a) Benchmark
+
+Latest tests with default config values shows a ~13 req/sec rpc call rate average.
+Keep in mind that speed is rate-limited per gandi API policy (30 calls per 2 seconds).
+
+![Hystrix dashboard sample](hd-sample.png)
+
+
 #### Roadmap
 
-- Hystrix dashboard connector.
-- Internal stats API.
 - Better unit tests, examples and documentation.
 - Improve the API with higher level functions, *à la* [Gandi.cli](https://github.com/Gandi/gandi.cli)
 

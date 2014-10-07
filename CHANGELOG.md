@@ -1,9 +1,19 @@
-### clj-gandi 0.1.2
+### clj-gandi 0.1.3
+Hystrix dashboard and fine tuning.
 
-- remove useless cheshire dependency.
-- move retry on failure from worker to caller.
-- add GANDI_API_TIMEOUT_MS, GANDI_API_RETRY_COUNT and GANDI_LOG_LEVEL env vars.
-- raise default rpc timeout to 30s.
+- Reformat Changelog.
+- Hystrix dashboard stream.
+- improve overrate handling.
+- Fine tuning default values.
+- update dependencies.
+
+### clj-gandi 0.1.2
+Better timeout and retry.
+
+- Remove useless cheshire dependency.
+- Move retry on failure from worker to caller.
+- Add GANDI_API_TIMEOUT_MS, GANDI_API_RETRY_COUNT and GANDI_LOG_LEVEL env vars.
+- Raise default rpc timeout to 30s.
 
 ### clj-gandi 0.1.1
 No API changes.
