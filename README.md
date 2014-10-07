@@ -30,11 +30,11 @@ GANDI_API_KEY="theprodapikey" GANDI_PROD=1 lein run
 
 ### environment variables
 
-`GANDI_API_KEY` api key, required.
-`GANDI_API_TIMEOUT_MS` rpc calls timeout in milliseconds, defaults to 30s.
-`GANDI_API_RETRY_COUNT` rpc calls retry count when rpc fault or timeout, defaults to 5.
-`GANDI_PROD` use production api, set to 1 for production, use OT&E api if unset or 0.
-`GANDI_LOG_LEVEL` log level, "debug","info","warn","error", defaults to "warn".
+`GANDI_API_KEY` api key, required.  
+`GANDI_API_TIMEOUT_MS` rpc calls timeout in milliseconds, defaults to 30s.  
+`GANDI_API_RETRY_COUNT` rpc calls retry count when rpc fault or timeout, defaults to 5.  
+`GANDI_PROD` use production api, set to 1 for production, use OT&E api if unset or 0.  
+`GANDI_LOG_LEVEL` log level, "debug","info","warn","error", defaults to "warn".  
 
 #### Example
 ```clojure
