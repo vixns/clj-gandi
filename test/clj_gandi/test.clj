@@ -1,11 +1,7 @@
 (ns clj-gandi.test
   (require
     [clojure.test :refer :all]
-    [clj-logging-config.log4j :as log-config]
     [clj-gandi.core :refer [call list-all]]))
-
-(log-config/set-logger! "root" :level :warn)
-;(log-config/set-logger! "clj-gandi.core" :level :debug)
 
 (defonce gandi-pool (clj-gandi.core/initialize))
 
