@@ -10,7 +10,6 @@
                   [environ "1.0.0"]
                   [throttler "1.0.0"]
                   [necessary-evil "2.0.0"]
-                  [cheshire "5.3.1"]
                   [org.clojure/tools.logging "0.3.0"]
                   [clj-logging-config "1.9.12"]
                   [org.slf4j/slf4j-log4j12 "1.7.7"]
