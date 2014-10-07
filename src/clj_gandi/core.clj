@@ -22,19 +22,25 @@
 (def slow-chan (throttle-chan in 14 :second))
 
 (log-config/set-logger! "clj-gandi.core" :level (or (keyword (env :gandi-log-level)) :warn))
-(System/setProperty "hystrix.command.clj-gandi.core/call*.execution.isolation.thread.timeoutInMilliseconds" (str latency))
+(System/setProperty "hystrix.command.clj-gandi.core/rpc.execution.isolation.thread.timeoutInMilliseconds" (str latency))
+(System/setProperty "hystrix.threadpool.clj-gandi.core.coreSize" "30")
 
-(hystrix/defcommand call*
+(hystrix/defcommand rpc
                     "gandi api wrapper.
-                    (call :method :version.info)
-                    (call :method :domain.list :items_per_page 500)
+                    (rpc :method :version.info)
+                    (rpc :method :domain.list :items_per_page 500)
                     "
                     {:hystrix/fallback-fn (constantly nil)}
                     [{:keys [method] :or [:version.info] :as options}]
-                    (allow-nils true (xml-rpc/call
-                                       (api-url) method (api-key)
-                                       (dissoc options :method :resp-ch))))
-
+                    (let [r (allow-nils true (xml-rpc/call
+                                               (api-url) method (api-key)
+                                               (dissoc options :method :resp-ch)))]
+                      (if (fault? r)
+                        (if (= (:fault-code r) 130004)      ;ratelimit
+                          (throw (Exception. r))
+                          )
+                        (identity r)
+                        )))
 
 (defn- init-worker
   "init worker"
@@ -42,16 +48,15 @@
   (go-loop []
            (let [e (<! slow-chan)]
              (log/debugf "message to gandi worker %s: %s" id e)
-             (let [r (call* e)]
+             (let [r (rpc e)]
                (log/debugf "response from gandi worker %s: %s " id (or (:fault-string r) r))
-               (if (fault? r) (log/errorf "Error in rpc call %s" (str (:fault-string r) e)))
                (if-let [c (:resp-ch e)]
                  (if-not (nil? r) (>! c r)))))
            (recur)))
 
 (defn initialize
   "initialize workers"
-  ([] (initialize 40))
+  ([] (initialize 45))
   ([n] (dorun (map (partial init-worker) (range n)))))
 
 (defn call
@@ -62,7 +67,7 @@
          req (merge {:method method :resp-ch r} options)]
      (loop [retry 1]
        (put! in req)
-       (let [a (alts!! [r (timeout latency)])
+       (let [a (alts!! [r (timeout (+ 1000 latency))])
              resp (first a)]
          (log/debugf "call response on try %s: %s" retry resp)
          (if (nil? resp)
